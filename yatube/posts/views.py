@@ -1,4 +1,3 @@
-from threading import TIMEOUT_MAX
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator
 
@@ -11,6 +10,7 @@ from django.views.decorators.cache import cache_page
 RECENT_POSTS: int = 10
 TITLE_SYMBOL: int = 30
 TIMOUT_CACHE: int = 20
+
 
 @cache_page(TIMOUT_CACHE)
 def index(request):

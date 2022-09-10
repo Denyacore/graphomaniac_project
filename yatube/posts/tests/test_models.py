@@ -1,6 +1,3 @@
-from multiprocessing.connection import Client
-from tabnanny import verbose
-from turtle import title
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -16,8 +13,6 @@ class PostModelTest(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='author')
         cls.user_2 = User.objects.create_user(username='user')
-        # cls.author = Client()
-        # cls.author.force_login
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='Тестовый слаг',
