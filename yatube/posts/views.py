@@ -1,3 +1,4 @@
+from threading import TIMEOUT_MAX
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator
 
@@ -5,11 +6,13 @@ from .forms import PostForm, CommentForm
 from .models import Group, Post, User, Follow
 
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
 
 RECENT_POSTS: int = 10
 TITLE_SYMBOL: int = 30
+TIMOUT_CACHE: int = 20
 
-
+@cache_page(TIMOUT_CACHE)
 def index(request):
     template_index = 'posts/index.html'
     post_list = Post.objects.select_related('author')

@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
-
+from django.urls import reverse
 from http import HTTPStatus
-from ..models import Group, Post
+from ..models import Group, Post, Comment
+from django.core.cache import cache
 
 User = get_user_model()
 
@@ -41,10 +42,26 @@ class PostUrlTest(TestCase):
                 response = self.guest_client.get(page)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_guest_create_redirect(self):
-        """Редирект гостя при попытке создать пост"""
+    def test_guest_redirects(self):
+        """Редирект гостя при попытке зайти на недопустимые страницы"""
         response = self.guest_client.get('/create/', follow=True)
         self.assertRedirects(response, ('/auth/login/?next=/create/'))
+
+        response = self.guest_client.get(
+            '/profile/testnick/follow/', follow=True)
+        self.assertRedirects(
+            response, ('/auth/login/?next=/profile/testnick/follow/'))
+
+        response = self.guest_client.get(
+            '/profile/testnick/unfollow/', follow=True)
+        self.assertRedirects(
+            response, ('/auth/login/?next=/profile/testnick/unfollow/'))
+
+        response = self.guest_client.get(
+            reverse('posts:add_comment', args=(self.post.id,))
+        )
+        self.assertRedirects(
+            response, ('/auth/login/?next=/posts/1/comment/'))
 
     def test_edit_post_author_only(self):
         """Редактирование поста доступно только автору"""
@@ -52,12 +69,13 @@ class PostUrlTest(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_autorize(self):
-        """Страница /create/ доступна только авторизованному пользователю."""
+        """Страница /create/ доступна авторизованному пользователю."""
         response = self.authorized_client.get('/create/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
+        cache.clear()
         templates_url_names_autorize = {
             '/': 'posts/index.html',
             '/group/test-slug/': 'posts/group_list.html',
@@ -65,11 +83,13 @@ class PostUrlTest(TestCase):
             '/posts/1/edit/': 'posts/post_create.html',
             '/posts/1/': 'posts/post_detail.html',
             '/profile/testnick/': 'posts/profile.html',
+            '/follow/': 'posts/follow.html',
         }
         for url, template in templates_url_names_autorize.items():
             with self.subTest(template=template):
                 response = self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template)
+        cache.clear()
         templates_url_names_guest = {
             '/': 'posts/index.html',
             '/group/test-slug/': 'posts/group_list.html',
@@ -80,3 +100,21 @@ class PostUrlTest(TestCase):
             with self.subTest(template=template):
                 response = self.guest_client.get(url)
                 self.assertTemplateUsed(response, template)
+
+    def test_follow_autorized_redirects(self):
+        """Редирект авторизованного пользователя
+        на /profile/ при подписке/отписке
+        """
+        response = self.authorized_client.get(
+            '/profile/testnick/follow/', follow=True)
+        response = self.authorized_client.get(
+            '/profile/testnick/unfollow/', follow=True)
+        self.assertRedirects(response, ('/profile/testnick/'))
+
+    def test_comment_autorized_redirect(self):
+        """Редирект авторизованного пользователя
+        на /post_detail/ при комментировании
+        """
+        response = self.authorized_client.get(
+            reverse('posts:add_comment', args=(self.post.id,)))
+        self.assertRedirects(response, ('/posts/1/'))

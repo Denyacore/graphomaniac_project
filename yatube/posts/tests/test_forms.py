@@ -3,7 +3,7 @@ import shutil
 
 from django.conf import settings
 from django.urls import reverse
-from posts.models import Group, Post
+from posts.models import Group, Post, Comment
 from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
@@ -133,3 +133,34 @@ class PostFormTests(TestCase):
             'posts:post_detail', kwargs={'post_id': self.post.id}))
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertNotEqual(post_2.text, 'Измененный текст2')
+
+    def test_autorized_add_comment(self):
+        """Аавторизованный пользователь комментит"""
+        comments_count = Comment.objects.count()
+        form_data = {
+            'text': 'Тестовый комментарий',
+        }
+        response = self.authorized_client.post((
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id})),
+            data=form_data,
+            follow=True
+        )
+        comment = Comment.objects.get(id=self.post.id)
+        self.assertEqual(Comment.objects.count(), comments_count + 1)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(comment.text, 'Тестовый комментарий')
+
+    def test_add_comments_post_anonymous(self):
+        """Гость комментит"""
+        comments_count = Comment.objects.count()
+        form_data = {
+            'text': 'Тестовый комментарий',
+        }
+        response = self.guest_client.post((
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id})),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(Comment.objects.count(), comments_count)
+        self.assertRedirects(
+            response, f'/auth/login/?next=/posts/{self.post.id}/comment/')

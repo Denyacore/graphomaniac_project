@@ -1,3 +1,4 @@
+from email.headerregistry import UniqueUnstructuredHeader
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -12,6 +13,10 @@ class Group(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+    class Meta:
+        verbose_name = 'Группа'
+        verbose_name_plural = 'Группы'
 
 
 class Post(models.Model):
@@ -75,15 +80,33 @@ class Comment(models.Model):
         db_index=True
     )
 
+    def __str__(self) -> str:
+        return self.text
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
 
 class Follow(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='follower',
+        verbose_name='Кто подписан'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following'
+        related_name='following',
+        verbose_name='На кого подписан'
     )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [models.UniqueConstraint(
+            fields=['user', 'author'], name='unique_follower')]
+
+    def __str__(self) -> str:
+        return self.user.username

@@ -66,7 +66,9 @@ class PostPagesTests(TestCase):
             reverse('posts:post_create'): 'posts/post_create.html',
             reverse('posts:post_edit', kwargs={'post_id': cls.post.id}): (
                 'posts/post_create.html'
-            )
+            ),
+            reverse('posts:follow_index'): 'posts/follow.html',
+
         }
         cls.author = Client()
         cls.author.force_login(cls.user)
@@ -81,6 +83,7 @@ class PostPagesTests(TestCase):
 
     def test_views_use_correct_template_guest(self):
         """Проверка namespaces"""
+        cache.clear()
         for namespace, template in self.templates_pages_names.items():
             with self.subTest(template):
                 response = self.author.get(namespace)
@@ -110,6 +113,7 @@ class PostPagesTests(TestCase):
 
     def test_index_context_is_posts_list(self):
         """На главную страницу передаётся спиcок постов"""
+        cache.clear()
         response = self.guest_client.get(reverse("posts:index"))
         response_post = response.context.get('page_obj').object_list[0]
         post_image = response_post.image
@@ -192,6 +196,7 @@ class PaginatorViewsTests(TestCase):
                      text='Тестовый текст' + str(i)) for i in range(13)]
         Post.objects.bulk_create(cls.posts)
         cls.guest_client = Client()
+        cache.clear()
 
     def test_first_page_contains_ten_records(self):
         """Paginator | index: На первой странице 10 постов"""
@@ -335,6 +340,7 @@ class FollowViewTests(TestCase):
         self.assertEqual(Follow.objects.all().count(), 0)
 
     def test_new_post_in_feed_follower(self):
+        """Пост появится в списке подписок подписчика"""
         Follow.objects.create(
             author=self.user_author,
             user=self.user_follower
@@ -345,3 +351,11 @@ class FollowViewTests(TestCase):
         self.assertEqual(post_text_1, self.post.text)
         response = self.autorized_author.get('/follow/')
         self.assertNotContains(response, self.post.text)
+
+    def test_not_follow_himself(self):
+        """Автор не может подписаться сам на себя"""
+        self.autorized_follower.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.user_follower.username}))
+        self.assertEqual(Follow.objects.all().count(), 0)

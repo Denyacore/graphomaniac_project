@@ -1,35 +1,33 @@
 {% extends 'base.html' %}
 {% load user_filters %}
-{% block title %} 
+{% block title %}
   {% if is_edit %}
     Редактировать пост
   {% else %}
     Создать пост
-    {% endif %}
+  {% endif %}
 {% endblock %}
 <main>
-  {% block content%}
+  {% block content %}
     <div class="container py-5">
       <div class="row justify-content-center">
         <div class="col-md-8 p-5">
           <div class="card">
             <div class="card-header">
-              {% if is_edit %}       
+              {% if is_edit %}
                 Редактировать пост
               {% else %}
                 Новый пост
-              {% endif %}             
+              {% endif %}
             </div>
             <div class="card-body">
-                {%include 'includes/form_post_create.html'%}        
+              {% include 'includes/form_post_create.html' %}
               <div class="d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
-                  Сохранить
-                </button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  {% endblock%}
-</main>
+    {% endblock %}
+  </main>
