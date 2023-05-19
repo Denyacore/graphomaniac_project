@@ -1,4 +1,4 @@
-# Social network Yatube by [Denyacore](https://github.com/Denyacore)
+# Social network Graphomaniac by [Denyacore](https://github.com/Denyacore)
 
 Социальная сеть блогеров. Реализована идея вести свой блог с возможностью публикации постов, подпиской на группы и авторов, а также комментированием постов.
 
